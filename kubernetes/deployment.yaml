@@ -1,22 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cpu-profile-demo-slow
+  name: cpu-profile-demo
   namespace: cpu-profile-demo
   labels:
     app.kubernetes.io/name: cpu-profile-demo
-    app.kubernetes.io/instance: slow
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: cpu-profile-demo
-      app.kubernetes.io/instance: slow
   template:
     metadata:
       labels:
         app.kubernetes.io/name: cpu-profile-demo
-        app.kubernetes.io/instance: slow
         app.kubernetes.io/component: application
     spec:
       securityContext:
@@ -28,57 +25,14 @@ spec:
           image: ghcr.io/mqasimsarfraz/python-cpu-profiling-demo:latest
           imagePullPolicy: Always
           env:
-            - name: IMPLEMENTATION
+            - name: DUPLICATE_IMPLEMENTATION
               value: slow
-            - name: INPUT_SIZE
+            - name: DUPLICATE_INPUT_SIZE
               value: "5000"
-          resources:
-            requests:
-              cpu: 250m
-              memory: 64Mi
-            limits:
-              cpu: "1"
-              memory: 128Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cpu-profile-demo-fast
-  namespace: cpu-profile-demo
-  labels:
-    app.kubernetes.io/name: cpu-profile-demo
-    app.kubernetes.io/instance: fast
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: cpu-profile-demo
-      app.kubernetes.io/instance: fast
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: cpu-profile-demo
-        app.kubernetes.io/instance: fast
-        app.kubernetes.io/component: application
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-      containers:
-        - name: application
-          image: ghcr.io/mqasimsarfraz/python-cpu-profiling-demo:latest
-          imagePullPolicy: Always
-          env:
-            - name: IMPLEMENTATION
-              value: fast
-            - name: INPUT_SIZE
-              value: "5000"
+            - name: SORT_INPUT_SIZE
+              value: "200000"
+            - name: WORK_INTERVAL_SECONDS
+              value: "1"
           resources:
             requests:
               cpu: 250m

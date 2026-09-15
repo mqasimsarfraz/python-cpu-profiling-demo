@@ -1,17 +1,17 @@
 import os
 import time
 
-DEFAULT_IMPLEMENTATION = os.getenv("IMPLEMENTATION", "slow")
-INPUT_SIZE = int(os.getenv("INPUT_SIZE", "5000"))
-REPORT_INTERVAL_SECONDS = float(os.getenv("REPORT_INTERVAL_SECONDS", "5"))
-WORK_INTERVAL_SECONDS = float(os.getenv("WORK_INTERVAL_SECONDS", "0.5"))
+DUPLICATE_IMPLEMENTATION = os.getenv("DUPLICATE_IMPLEMENTATION", "slow")
+DUPLICATE_INPUT_SIZE = int(os.getenv("DUPLICATE_INPUT_SIZE", "5000"))
+SORT_INPUT_SIZE = int(os.getenv("SORT_INPUT_SIZE", "200000"))
+WORK_INTERVAL_SECONDS = float(os.getenv("WORK_INTERVAL_SECONDS", "1"))
 
-if DEFAULT_IMPLEMENTATION not in {"slow", "fast"}:
-    raise RuntimeError("IMPLEMENTATION must be 'slow' or 'fast'")
-if INPUT_SIZE < 100 or INPUT_SIZE > 20_000:
-    raise RuntimeError("INPUT_SIZE must be between 100 and 20000")
-if REPORT_INTERVAL_SECONDS <= 0:
-    raise RuntimeError("REPORT_INTERVAL_SECONDS must be greater than zero")
+if DUPLICATE_IMPLEMENTATION not in {"slow", "fast"}:
+    raise RuntimeError("DUPLICATE_IMPLEMENTATION must be 'slow' or 'fast'")
+if DUPLICATE_INPUT_SIZE < 100 or DUPLICATE_INPUT_SIZE > 20_000:
+    raise RuntimeError("DUPLICATE_INPUT_SIZE must be between 100 and 20000")
+if SORT_INPUT_SIZE < 1_000 or SORT_INPUT_SIZE > 1_000_000:
+    raise RuntimeError("SORT_INPUT_SIZE must be between 1000 and 1000000")
 if WORK_INTERVAL_SECONDS <= 0:
     raise RuntimeError("WORK_INTERVAL_SECONDS must be greater than zero")
 
@@ -19,6 +19,14 @@ if WORK_INTERVAL_SECONDS <= 0:
 def generate_values(size: int) -> list[int]:
     unique_values = max(size // 2, 1)
     return [(index * 37) % unique_values for index in range(size)]
+
+
+def generate_sort_values(size: int) -> list[int]:
+    return [(index * 48_271) % 2_147_483_647 for index in range(size)]
+
+
+def sort_values(values: list[int]) -> list[int]:
+    return sorted(values)
 
 
 def find_duplicates_slow(values: list[int]) -> list[int]:
@@ -42,42 +50,61 @@ def find_duplicates_fast(values: list[int]) -> list[int]:
     return sorted(duplicates)
 
 
+def build_histogram(values: list[int], bucket_count: int = 1_024) -> list[int]:
+    buckets = [0] * bucket_count
+    for value in values:
+        buckets[value % bucket_count] += 1
+    return buckets
+
+
 def run_workload() -> None:
-    values = generate_values(INPUT_SIZE)
-    implementation = (
+    duplicate_values = generate_values(DUPLICATE_INPUT_SIZE)
+    sort_input = generate_sort_values(SORT_INPUT_SIZE)
+    find_duplicates = (
         find_duplicates_slow
-        if DEFAULT_IMPLEMENTATION == "slow"
+        if DUPLICATE_IMPLEMENTATION == "slow"
         else find_duplicates_fast
     )
-    expected_duplicates = INPUT_SIZE // 2
-    iterations = 0
-    report_started = time.perf_counter()
+    expected_duplicates = DUPLICATE_INPUT_SIZE // 2
 
     print(
-        f"implementation={DEFAULT_IMPLEMENTATION} input_size={INPUT_SIZE}",
+        f"duplicate_implementation={DUPLICATE_IMPLEMENTATION} "
+        f"duplicate_input_size={DUPLICATE_INPUT_SIZE} "
+        f"sort_input_size={SORT_INPUT_SIZE}",
         flush=True,
     )
 
     while True:
         iteration_started = time.perf_counter()
-        duplicates = implementation(values)
+
+        started = time.perf_counter()
+        sorted_values = sort_values(sort_input)
+        sort_ms = (time.perf_counter() - started) * 1_000
+
+        started = time.perf_counter()
+        duplicates = find_duplicates(duplicate_values)
+        duplicates_ms = (time.perf_counter() - started) * 1_000
+
+        started = time.perf_counter()
+        histogram = build_histogram(sort_input)
+        histogram_ms = (time.perf_counter() - started) * 1_000
+
         if len(duplicates) != expected_duplicates:
-            raise RuntimeError("Workload produced an unexpected result")
-        iterations += 1
+            raise RuntimeError("Duplicate workload produced an unexpected result")
+        if len(sorted_values) != SORT_INPUT_SIZE:
+            raise RuntimeError("Sort workload produced an unexpected result")
+        if sum(histogram) != SORT_INPUT_SIZE:
+            raise RuntimeError("Histogram workload produced an unexpected result")
+
         work_elapsed = time.perf_counter() - iteration_started
         time.sleep(max(0, WORK_INTERVAL_SECONDS - work_elapsed))
 
-        now = time.perf_counter()
-        elapsed = now - report_started
-        if elapsed >= REPORT_INTERVAL_SECONDS:
-            print(
-                f"implementation={DEFAULT_IMPLEMENTATION} "
-                f"iterations_per_second={iterations / elapsed:.2f} "
-                f"checksum={sum(duplicates)}",
-                flush=True,
-            )
-            iterations = 0
-            report_started = now
+        print(
+            f"sort_ms={sort_ms:.2f} "
+            f"duplicates_ms={duplicates_ms:.2f} "
+            f"histogram_ms={histogram_ms:.2f}",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":

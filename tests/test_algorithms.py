@@ -1,9 +1,12 @@
 import unittest
 
 from app.main import (
+    build_histogram,
     find_duplicates_fast,
     find_duplicates_slow,
+    generate_sort_values,
     generate_values,
+    sort_values,
 )
 
 
@@ -21,6 +24,16 @@ class DuplicateDetectionTests(unittest.TestCase):
 
         self.assertEqual(find_duplicates_slow(values), [])
         self.assertEqual(find_duplicates_fast(values), [])
+
+    def test_sort_values_orders_input(self) -> None:
+        values = generate_sort_values(100)
+
+        self.assertEqual(sort_values(values), sorted(values))
+
+    def test_histogram_accounts_for_every_value(self) -> None:
+        values = generate_sort_values(100)
+
+        self.assertEqual(sum(build_histogram(values)), len(values))
 
 
 if __name__ == "__main__":
