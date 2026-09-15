@@ -1,4 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: cpu-profile-demo
+  name: cpu-profile-baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cpu-profile-optimized

@@ -15,7 +15,7 @@ metadata:
     gadgetNodes: ""
 data:
   operator.KubeManager.all-namespaces: "false"
-  operator.KubeManager.namespace: cpu-profile-demo
+  operator.KubeManager.namespace: cpu-profile-baseline,cpu-profile-optimized
   operator.KubeManager.selector: app.kubernetes.io/name=cpu-profile-demo
   operator.oci.annotate: "samples.k8s.podName:profiles.sample-attribute=true,samples.k8s.namespace:profiles.sample-attribute=true"
   operator.oci.ebpf.collect-otel-stack: "true"
