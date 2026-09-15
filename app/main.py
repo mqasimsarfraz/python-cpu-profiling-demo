@@ -1,13 +1,15 @@
 import os
 import time
 
-DUPLICATE_IMPLEMENTATION = os.getenv("DUPLICATE_IMPLEMENTATION", "slow")
+DUPLICATE_IMPLEMENTATION = os.getenv("DUPLICATE_IMPLEMENTATION", "baseline")
 DUPLICATE_INPUT_SIZE = int(os.getenv("DUPLICATE_INPUT_SIZE", "5000"))
 SORT_INPUT_SIZE = int(os.getenv("SORT_INPUT_SIZE", "200000"))
 WORK_INTERVAL_SECONDS = float(os.getenv("WORK_INTERVAL_SECONDS", "1"))
 
-if DUPLICATE_IMPLEMENTATION not in {"slow", "fast"}:
-    raise RuntimeError("DUPLICATE_IMPLEMENTATION must be 'slow' or 'fast'")
+if DUPLICATE_IMPLEMENTATION not in {"baseline", "optimized"}:
+    raise RuntimeError(
+        "DUPLICATE_IMPLEMENTATION must be 'baseline' or 'optimized'"
+    )
 if DUPLICATE_INPUT_SIZE < 100 or DUPLICATE_INPUT_SIZE > 20_000:
     raise RuntimeError("DUPLICATE_INPUT_SIZE must be between 100 and 20000")
 if SORT_INPUT_SIZE < 1_000 or SORT_INPUT_SIZE > 1_000_000:
@@ -29,7 +31,7 @@ def sort_values(values: list[int]) -> list[int]:
     return sorted(values)
 
 
-def find_duplicates_slow(values: list[int]) -> list[int]:
+def find_duplicates(values: list[int]) -> list[int]:
     duplicates: set[int] = set()
     for index, value in enumerate(values):
         for candidate_index in range(index + 1, len(values)):
@@ -39,7 +41,7 @@ def find_duplicates_slow(values: list[int]) -> list[int]:
     return sorted(duplicates)
 
 
-def find_duplicates_fast(values: list[int]) -> list[int]:
+def find_duplicates_optimized(values: list[int]) -> list[int]:
     seen: set[int] = set()
     duplicates: set[int] = set()
     for value in values:
@@ -60,10 +62,10 @@ def build_histogram(values: list[int], bucket_count: int = 1_024) -> list[int]:
 def run_workload() -> None:
     duplicate_values = generate_values(DUPLICATE_INPUT_SIZE)
     sort_input = generate_sort_values(SORT_INPUT_SIZE)
-    find_duplicates = (
-        find_duplicates_slow
-        if DUPLICATE_IMPLEMENTATION == "slow"
-        else find_duplicates_fast
+    duplicate_function = (
+        find_duplicates
+        if DUPLICATE_IMPLEMENTATION == "baseline"
+        else find_duplicates_optimized
     )
     expected_duplicates = DUPLICATE_INPUT_SIZE // 2
 
@@ -82,7 +84,7 @@ def run_workload() -> None:
         sort_ms = (time.perf_counter() - started) * 1_000
 
         started = time.perf_counter()
-        duplicates = find_duplicates(duplicate_values)
+        duplicates = duplicate_function(duplicate_values)
         duplicates_ms = (time.perf_counter() - started) * 1_000
 
         started = time.perf_counter()

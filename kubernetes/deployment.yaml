@@ -26,7 +26,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: DUPLICATE_IMPLEMENTATION
-              value: slow
+              value: baseline
             - name: DUPLICATE_INPUT_SIZE
               value: "5000"
             - name: SORT_INPUT_SIZE

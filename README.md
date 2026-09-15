@@ -5,13 +5,13 @@ reveals which parts of an application consume the most CPU. One process
 continuously performs three named operations:
 
 - `sort_values`: sorts 200,000 integers.
-- `find_duplicates_slow`: finds duplicates with quadratic `O(n^2)` loops.
+- `find_duplicates`: finds duplicates with quadratic `O(n^2)` loops.
 - `build_histogram`: groups values into histogram buckets.
 
-The same image also includes the optimized `find_duplicates_fast` implementation
-using linear `O(n)` set lookups. Kubernetes runs a single pod with the slow
-version enabled initially. There is no HTTP server or external load generator,
-so profiles contain only the workload and Python runtime frames.
+The same image also includes `find_duplicates_optimized`, which uses linear
+`O(n)` set lookups. Kubernetes runs a single pod with the baseline version
+enabled initially. There is no HTTP server or external load generator, so
+profiles contain only the workload and Python runtime frames.
 
 ## Run locally
 
@@ -60,15 +60,15 @@ kubectl get configmap cpu-profile-demo-profiles -n gadget
 
 The first profile should make the relative cost of each operation clear:
 
-- `find_duplicates_slow` should be the widest and hottest function.
+- `find_duplicates` should be the widest and hottest function.
 - `sort_values` should consume a smaller but visible portion.
 - `build_histogram` should consume the least CPU.
 
-After capturing the slow profile, enable the optimized duplicate function:
+After capturing the baseline profile, enable the optimized duplicate function:
 
 ```bash
 kubectl set env deployment/cpu-profile-demo -n cpu-profile-demo \
-  DUPLICATE_IMPLEMENTATION=fast
+  DUPLICATE_IMPLEMENTATION=optimized
 kubectl rollout status deployment/cpu-profile-demo -n cpu-profile-demo
 ```
 
@@ -78,7 +78,7 @@ the next visible optimization candidate. Restore the initial version with:
 
 ```bash
 kubectl set env deployment/cpu-profile-demo -n cpu-profile-demo \
-  DUPLICATE_IMPLEMENTATION=slow
+  DUPLICATE_IMPLEMENTATION=baseline
 ```
 
 Remove the demo:
