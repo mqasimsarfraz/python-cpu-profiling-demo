@@ -1,19 +1,19 @@
 import os
 import time
-from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
-
-Implementation = Literal["slow", "optimized"]
 DEFAULT_IMPLEMENTATION = os.getenv("IMPLEMENTATION", "slow")
+INPUT_SIZE = int(os.getenv("INPUT_SIZE", "5000"))
+REPORT_INTERVAL_SECONDS = float(os.getenv("REPORT_INTERVAL_SECONDS", "5"))
+WORK_INTERVAL_SECONDS = float(os.getenv("WORK_INTERVAL_SECONDS", "0.5"))
 
-if DEFAULT_IMPLEMENTATION not in {"slow", "optimized"}:
-    raise RuntimeError("IMPLEMENTATION must be 'slow' or 'optimized'")
-
-app = FastAPI(
-    title="Python CPU Profiling Demo",
-    description="A deterministic CPU workload with slow and optimized implementations.",
-)
+if DEFAULT_IMPLEMENTATION not in {"slow", "fast"}:
+    raise RuntimeError("IMPLEMENTATION must be 'slow' or 'fast'")
+if INPUT_SIZE < 100 or INPUT_SIZE > 20_000:
+    raise RuntimeError("INPUT_SIZE must be between 100 and 20000")
+if REPORT_INTERVAL_SECONDS <= 0:
+    raise RuntimeError("REPORT_INTERVAL_SECONDS must be greater than zero")
+if WORK_INTERVAL_SECONDS <= 0:
+    raise RuntimeError("WORK_INTERVAL_SECONDS must be greater than zero")
 
 
 def generate_values(size: int) -> list[int]:
@@ -31,7 +31,7 @@ def find_duplicates_slow(values: list[int]) -> list[int]:
     return sorted(duplicates)
 
 
-def find_duplicates_optimized(values: list[int]) -> list[int]:
+def find_duplicates_fast(values: list[int]) -> list[int]:
     seen: set[int] = set()
     duplicates: set[int] = set()
     for value in values:
@@ -42,32 +42,43 @@ def find_duplicates_optimized(values: list[int]) -> list[int]:
     return sorted(duplicates)
 
 
-@app.get("/healthz")
-def healthz() -> dict[str, str]:
-    return {"status": "ok"}
+def run_workload() -> None:
+    values = generate_values(INPUT_SIZE)
+    implementation = (
+        find_duplicates_slow
+        if DEFAULT_IMPLEMENTATION == "slow"
+        else find_duplicates_fast
+    )
+    expected_duplicates = INPUT_SIZE // 2
+    iterations = 0
+    report_started = time.perf_counter()
+
+    print(
+        f"implementation={DEFAULT_IMPLEMENTATION} input_size={INPUT_SIZE}",
+        flush=True,
+    )
+
+    while True:
+        iteration_started = time.perf_counter()
+        duplicates = implementation(values)
+        if len(duplicates) != expected_duplicates:
+            raise RuntimeError("Workload produced an unexpected result")
+        iterations += 1
+        work_elapsed = time.perf_counter() - iteration_started
+        time.sleep(max(0, WORK_INTERVAL_SECONDS - work_elapsed))
+
+        now = time.perf_counter()
+        elapsed = now - report_started
+        if elapsed >= REPORT_INTERVAL_SECONDS:
+            print(
+                f"implementation={DEFAULT_IMPLEMENTATION} "
+                f"iterations_per_second={iterations / elapsed:.2f} "
+                f"checksum={sum(duplicates)}",
+                flush=True,
+            )
+            iterations = 0
+            report_started = now
 
 
-@app.get("/analyze")
-def analyze(
-    size: int = Query(default=5_000, ge=100, le=20_000),
-    implementation: Implementation | None = None,
-) -> dict[str, int | float | str]:
-    selected = implementation or DEFAULT_IMPLEMENTATION
-    values = generate_values(size)
-
-    started = time.perf_counter()
-    if selected == "slow":
-        duplicates = find_duplicates_slow(values)
-    elif selected == "optimized":
-        duplicates = find_duplicates_optimized(values)
-    else:
-        raise HTTPException(status_code=400, detail="Unknown implementation")
-    elapsed_ms = (time.perf_counter() - started) * 1_000
-
-    return {
-        "implementation": selected,
-        "input_size": size,
-        "duplicate_count": len(duplicates),
-        "checksum": sum(duplicates),
-        "elapsed_ms": round(elapsed_ms, 3),
-    }
+if __name__ == "__main__":
+    run_workload()

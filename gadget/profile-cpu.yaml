@@ -1,0 +1,24 @@
+# Requires Inspektor Gadget and the pyroscope-exporter OpenTelemetry exporter.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cpu-profile-demo-profiles
+  namespace: gadget
+  labels:
+    type: gadget-instance
+    name: cpu-profile-demo-profiles
+  annotations:
+    gadgetImage: "profile_cpu"
+    gadgetTags: "cpu"
+    gadgetTimeout: "0"
+    gadgetLogLevel: "0"
+    gadgetNodes: ""
+data:
+  operator.KubeManager.all-namespaces: "false"
+  operator.KubeManager.namespace: cpu-profile-demo
+  operator.KubeManager.selector: app.kubernetes.io/name=cpu-profile-demo
+  operator.oci.annotate: "samples.k8s.podName:profiles.sample-attribute=true,samples.k8s.namespace:profiles.sample-attribute=true"
+  operator.oci.ebpf.collect-otel-stack: "true"
+  operator.oci.ebpf.collect-ustack: "true"
+  operator.ustack.symbolizers: otel-ebpf-profiler
+  operator.otel-profiles.otel-profiles-exporter: "pyroscope-exporter"
