@@ -66,8 +66,9 @@ The first profile should make the relative cost of each operation clear:
 
 Capture at least two minutes of samples. The profiler's sampling frequency is
 fixed by `profile_cpu`; increasing `map-fetch-interval` only changes how often
-samples are exported. The workload sizes are balanced so sorting and histogram
-construction remain visible while duplicate detection is still the dominant
+samples are exported. The workload sizes produce roughly 90 ms of duplicate
+detection, 45 ms of histogram construction, and 30 ms of sorting per cycle, so
+all three functions remain visible while duplicate detection is the dominant
 hotspot. The gadget uses user stacks only to omit unrelated kernel frames.
 
 After capturing the baseline profile, enable the optimized duplicate function:
