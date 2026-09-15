@@ -4,7 +4,7 @@ A deliberately CPU-heavy Python process for demonstrating how profiling
 reveals which parts of an application consume the most CPU. One process
 continuously performs three named operations:
 
-- `sort_values`: sorts 200,000 integers.
+- `sort_values`: sorts 750,000 integers.
 - `find_duplicates`: finds duplicates with quadratic `O(n^2)` loops.
 - `build_histogram`: groups values into histogram buckets.
 
@@ -63,6 +63,12 @@ The first profile should make the relative cost of each operation clear:
 - `find_duplicates` should be the widest and hottest function.
 - `sort_values` should consume a smaller but visible portion.
 - `build_histogram` should consume the least CPU.
+
+Capture at least two minutes of samples. The profiler's sampling frequency is
+fixed by `profile_cpu`; increasing `map-fetch-interval` only changes how often
+samples are exported. The workload sizes are balanced so sorting and histogram
+construction remain visible while duplicate detection is still the dominant
+hotspot. The gadget uses user stacks only to omit unrelated kernel frames.
 
 After capturing the baseline profile, enable the optimized duplicate function:
 

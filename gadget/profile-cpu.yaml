@@ -20,5 +20,6 @@ data:
   operator.oci.annotate: "samples.k8s.podName:profiles.sample-attribute=true,samples.k8s.namespace:profiles.sample-attribute=true"
   operator.oci.ebpf.collect-otel-stack: "true"
   operator.oci.ebpf.collect-ustack: "true"
+  operator.oci.ebpf.user-stacks-only: "true"
   operator.ustack.symbolizers: otel-ebpf-profiler
   operator.otel-profiles.otel-profiles-exporter: "pyroscope-exporter"

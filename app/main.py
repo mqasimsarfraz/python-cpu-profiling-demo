@@ -3,7 +3,7 @@ import time
 
 DUPLICATE_IMPLEMENTATION = os.getenv("DUPLICATE_IMPLEMENTATION", "baseline")
 DUPLICATE_INPUT_SIZE = int(os.getenv("DUPLICATE_INPUT_SIZE", "5000"))
-SORT_INPUT_SIZE = int(os.getenv("SORT_INPUT_SIZE", "200000"))
+SORT_INPUT_SIZE = int(os.getenv("SORT_INPUT_SIZE", "750000"))
 WORK_INTERVAL_SECONDS = float(os.getenv("WORK_INTERVAL_SECONDS", "1"))
 
 if DUPLICATE_IMPLEMENTATION not in {"baseline", "optimized"}:
