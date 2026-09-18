@@ -64,6 +64,18 @@ flowchart TD
 | `sort_values` | Both pods | Stable comparison frame backed by Python's built-in sorting |
 | `time.sleep` | Both pods | Idle time; it should not appear as a CPU hotspot |
 
+## Dashboard
+
+[![Grafana dashboard comparing baseline and optimized CPU usage and flame graphs](images/dashboard-comparison.png)](images/dashboard-comparison.png)
+
+The dashboard makes the optimization visible at both the process and function
+levels. In this capture, the optimized workload uses less than half the CPU of
+the baseline (`8.67` versus `19.3`). The baseline flame graph attributes
+`19.6 K` samples to `find_duplicates`; that frame disappears from the optimized
+profile, while `build_histogram` remains nearly unchanged at about `8.9 K`
+samples and becomes the dominant application function. Click the image to view
+the full-size dashboard.
+
 ## Run locally
 
 ```bash
